@@ -1,1 +1,24 @@
-Add a templating engine, e.g. Jinja2
+
+Add some nice HTML/CSS/JS interface
+
+Interface could look like
+
+  INDEX -> PHOTO SITE
+
+  or
+
+  INDEX   // especially for smaller libraries
+    PHOTO
+    PHOTO
+    PHOTO
+    ...
+
+Add a logo (for the sake of our marketing department)
+Add functionality:
+  - actually use exif data
+  - use db file for titles, descriptions, geo locations etc.
+  - integrate with other services (Google maps)
+
+Put index.html into _web (can be reproduced).
+
+DONE: Add a templating engine, e.g. Jinja2
