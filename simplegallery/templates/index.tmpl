@@ -9,5 +9,13 @@
 {% for image in images %}
   <a href="{{ image.tn_filename }}"><img src="_web/{{ image.tn_filename }}"></a>
 {% endfor %}
+
+
+{% if archive %}
+<h2>Download the archive</h2>
+<a href="_web/sg.tgz">Archive of {{ title }}(tgz)</a>
+
+{% endif %}
+
 </body>
 </html>

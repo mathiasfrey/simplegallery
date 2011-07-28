@@ -2,5 +2,27 @@ simplegallery
 -------------
 Produces a gallery of images from a given directory.
 
-Credits:
-Original work goes back to pix2tn by Michael Hahsler, http://michael.hahsler.net/pix2tn/ 
+Warning
+-------
+This software is not intended to be used by non Python experts.
+You should be able to install some dependencies by yourself(, just
+check the error messages).
+
+Motivation
+----------
+After ten years of digital photography and presenting my images
+online I have finally decided what fits my needs best: a simple
+gallery script that produces plain old HTML and CSS; no databases,
+web frameworks etc. involved. 
+
+Main focus is to present your photos and have them backuped easily. Just
+place all your photos in a single directory and run the script. 
+
+Everything not so important (thumbnails, websites) is stored in a folder 
+called '_web'. Just exclude this folder from your backup - you
+can reproduce everything from your base directory, promise! 
+
+Credits
+-------
+Original work goes back to pix2tn by Michael Hahsler, 
+http://michael.hahsler.net/pix2tn/ 

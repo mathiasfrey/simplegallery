@@ -44,30 +44,43 @@ class Runner(object):
         # save command line options
         # type, sanity and completeness lies in argparse's responsibility
         self.args = args
+        self.contents = []
+        self.directory = self.args.directory[0]
     
     @classmethod
     def dispatch(cls, args):
         inst = cls(args)
         inst.run()
 
+    def archive(self):
+        """Create a tarball.
+        
+        ... and don't care whether it was called with prepare or process."""
+        subprocess.call( ['tar', '-cvzf', '_web/sg.tgz'] + [i.filename.split('/')[-1] for i in self.contents], cwd=self.directory)
 
 class GalleryPrepare(Runner):
     """Read directory and create db file"""
         
     def run(self):
             
-        directory = self.args.directory[0]
-        self.directory = directory
         
-        print 'Prepare gallery:'
-        print 'Creating file *sg.json* in %s' % directory
-        print 'Modify this file to exclude images, add descriptions etc.'
+        
+        print 'Creating file *sg.json* in %s' % self.directory
+        print '  Modify this file to exclude images, add descriptions etc.'
+
+
+        print 'Creating directory *_web*'
+        print '  I am going to store all not so important data there.'
+        print '  Think of excluding _web from your backup.'
+        print '  Everything can re-generated, promise!'
+        subprocess.call(['mkdir', '%s_web' % self.directory])
+        
         
         contents = []
         
         # getting content
         bad_name = False
-        for filename in glob.glob('%s*' % directory):
+        for filename in glob.glob('%s*' % self.directory):
             if is_image_file(filename):
                 if is_bad_name(filename):
                     bad_name = True
@@ -87,7 +100,7 @@ class GalleryPrepare(Runner):
         self.contents = contents
         
         # creating db file        
-        dbfile = open('%ssg.json' % directory, 'w')
+        dbfile = open('%ssg.json' % self.directory, 'w')
         dbfile.write('#\n')
         dbdata = []
         for image in contents:
@@ -107,9 +120,7 @@ class GalleryPrepare(Runner):
             self.archive()
             
             
-    def archive(self):
-        """Create a tarball"""
-        subprocess.call( ['tar', '-cvzf', 'sg.tgz'] + [i.filename.split('/')[-1] for i in self.contents], cwd=self.directory)
+
 
 
 class GalleryProcess(Runner):
@@ -143,11 +154,9 @@ class GalleryProcess(Runner):
             print 'Try repairing the file or generate it from scratch using prepare.'
             raise SystemExit(-1)
 
-        print 'Creating directory _web'
-        print 'I a going to store all thumbnails there' 
-        subprocess.call(['mkdir', '%s_web' % directory])        
+     
         
-
+        
         # thumbnail generation
         context['images'] = []
         for image in dbdata:
@@ -158,6 +167,8 @@ class GalleryProcess(Runner):
             context['images'].append(
                 {'tn_filename': tn_filename}
             )
+            
+            self.contents.append(Image(filename=tn_filename, exif=None))
             
             # very custom thumbnail command. there should be som flexibility
             # some day...
@@ -172,13 +183,34 @@ class GalleryProcess(Runner):
                                 'tn_filename':tn_filename}
                              ])
             
-            #html_content.append('<a href="%(tn_filename)s"><img src="_web/%(tn_filename)s" /></a>' % ({'tn_filename':tn_filename}))
+            # still a bug here: only works with png, but filename cannot differ from original
+            # file name right now
+            # other thing: Plugin() class would be handy
+            #subprocess.call(['convert', filename, '-thumbnail', '120x120>', '-gravity',
+            #                 'center', '-bordercolor', 'Lavender', '-background',
+            #                 'navy', '-polaroid', '0',
+            #                 '%(directory)s_web/%(tn_filename)s' % {
+            #                    'directory':directory,
+            #                    'tn_filename':tn_filename}])
+            
+            
             print '.',
         print
     
         print 'Generating index file'
         ix = open('%sindex.html' % directory, 'w')
+
         
+        # archive
+        if self.args.archive:
+            # dirty hack
+            self.archive()
+        
+        # test for archive link
+        if os.path.isfile("%s_web/sg.tgz" % directory):
+            # yes
+            print 'I found an archive. This will be part of the gallery'
+            context['archive'] = 'archive!'        
         
         # quick ad dirty jinja2 integration 
         env = Environment(loader=PackageLoader('simplegallery', 'templates'))
@@ -186,14 +218,11 @@ class GalleryProcess(Runner):
         
         ix.write(template.render(
             title='whatever title!',
-            images=context['images']))
+            images=context['images'],
+            archive=context.get('archive')))
         
-        # test for archive
-        #if os.path.isfile("%ssg.tgz" % directory):
-        #    # yes
-        #    print 'I found an archive. This will be part of the gallery'
-        #    ix.write('<a href="sg.tgz">Download archive!</a>') 
-        #
+
+        
         ix.close()
 
 
@@ -205,12 +234,12 @@ def main():
     # global args
     parser = argparse.ArgumentParser(description='simplegallery: creating a simple web gallery from image directory')
     parser.add_argument('-d', '--directory', nargs=1, help='the directory you want to work with', required=True, type=is_dir)
+    parser.add_argument('-A', '--archive', help='create a tarball?', action='store_true')
     
     subparsers = parser.add_subparsers(help='commands')
     
     # prepare directory
     prepare_parser = subparsers.add_parser('prepare', help='Prepare directory')
-    prepare_parser.add_argument('-A', '--archive', help='create a tarball?', action='store_true')
     prepare_parser.set_defaults(func=GalleryPrepare.dispatch)
     
     # process gallery
