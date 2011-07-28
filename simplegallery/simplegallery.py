@@ -10,6 +10,7 @@ import urllib
 import json
 import pprint
 
+from jinja2 import Template, Environment, PackageLoader
 from collections import namedtuple
 
 Image = namedtuple('Image', ['filename', 'exif'])
@@ -119,6 +120,8 @@ class GalleryProcess(Runner):
         directory = self.args.directory[0]
         images_per_row = 3
         
+        context = {} # everything for jinja2 
+        
         try:
             dbfile = open('%ssg.json' % directory,'r')
         except IOError:
@@ -144,13 +147,17 @@ class GalleryProcess(Runner):
         print 'I a going to store all thumbnails there' 
         subprocess.call(['mkdir', '%s_web' % directory])        
         
-        # html content
-        html_content= []
+
         # thumbnail generation
+        context['images'] = []
         for image in dbdata:
             
             filename = image['filename']
             tn_filename = filename.split('/')[-1]
+            
+            context['images'].append(
+                {'tn_filename': tn_filename}
+            )
             
             # very custom thumbnail command. there should be som flexibility
             # some day...
@@ -165,21 +172,28 @@ class GalleryProcess(Runner):
                                 'tn_filename':tn_filename}
                              ])
             
-            html_content.append('<a href="%(tn_filename)s"><img src="_web/%(tn_filename)s" /></a>' % ({'tn_filename':tn_filename}))
+            #html_content.append('<a href="%(tn_filename)s"><img src="_web/%(tn_filename)s" /></a>' % ({'tn_filename':tn_filename}))
             print '.',
         print
     
         print 'Generating index file'
         ix = open('%sindex.html' % directory, 'w')
         
-        ix.write('\n'.join(html_content))
+        
+        # quick ad dirty jinja2 integration 
+        env = Environment(loader=PackageLoader('simplegallery', 'templates'))
+        template = env.get_template('index.tmpl')
+        
+        ix.write(template.render(
+            title='whatever title!',
+            images=context['images']))
         
         # test for archive
-        if os.path.isfile("%ssg.tgz" % directory):
-            # yes
-            print 'I found an archive. This will be part of the gallery'
-            ix.write('<a href="sg.tgz">Download archive!</a>') 
-        
+        #if os.path.isfile("%ssg.tgz" % directory):
+        #    # yes
+        #    print 'I found an archive. This will be part of the gallery'
+        #    ix.write('<a href="sg.tgz">Download archive!</a>') 
+        #
         ix.close()
 
 

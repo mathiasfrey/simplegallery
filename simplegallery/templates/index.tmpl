@@ -1,0 +1,13 @@
+<html>
+<head>
+<title>simplegallery</title>
+</head>
+<body>
+
+<h1>{{ title }}</h1>
+
+{% for image in images %}
+  <a href="{{ image.tn_filename }}"><img src="_web/{{ image.tn_filename }}"></a>
+{% endfor %}
+</body>
+</html>
