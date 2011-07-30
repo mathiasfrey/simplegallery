@@ -74,7 +74,18 @@ class GalleryPrepare(Runner):
         print '  Think of excluding _web from your backup.'
         print '  Everything can re-generated, promise!'
         subprocess.call(['mkdir', '%s_web' % self.directory])
+        subprocess.call(['mkdir', '%s_web/images' % self.directory])
+        subprocess.call(['mkdir', '%s_web/med' % self.directory])
+        subprocess.call(['mkdir', '%s_web/tmb' % self.directory])
         
+        
+        # copy colorbox to _web
+        libdir = os.path.dirname(__file__)
+        
+        subprocess.call(['cp', '%s/colorbox/colorbox.css' % libdir, '%s_web/colorbox.css' % self.directory])
+        subprocess.call(['cp', '%s/colorbox/jquery.colorbox-min.js' % libdir, '%s_web/jquery.colorbox-min.js' % self.directory])
+        subprocess.call(['cp', '%s/colorbox/images/controls.png' % libdir, '%s_web/images/controls.png' % self.directory])
+        subprocess.call(['cp', '%s/colorbox/images/loading.gif' % libdir, '%s_web/images/loading.gif' % self.directory])
         
         contents = []
         
@@ -129,7 +140,7 @@ class GalleryProcess(Runner):
     def run(self):
         
         directory = self.args.directory[0]
-        images_per_row = 3
+        #images_per_row = 3
         
         context = {} # everything for jinja2 
         
@@ -178,7 +189,13 @@ class GalleryProcess(Runner):
                              '-pointsize', '12', '-density', '96x96', '+polaroid',
                              '-resize', '70%', '-gravity', 'center',
                              '-background', 'white', '-extent', '340x340', '-trim',
-                             '%(directory)s_web/%(tn_filename)s' % {
+                             '%(directory)s_web/tmb/%(tn_filename)s' % {
+                                'directory':directory,
+                                'tn_filename':tn_filename}
+                             ])
+            
+            subprocess.call(['convert', '-resize', '800x600>', filename,
+                             '%(directory)s_web/med/%(tn_filename)s' % {
                                 'directory':directory,
                                 'tn_filename':tn_filename}
                              ])
@@ -198,7 +215,7 @@ class GalleryProcess(Runner):
         print
     
         print 'Generating index file'
-        ix = open('%sindex.html' % directory, 'w')
+        ix = open('%s_web/index.html' % directory, 'w')
 
         
         # archive
